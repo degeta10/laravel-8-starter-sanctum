@@ -5,6 +5,7 @@ namespace App\Exceptions;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -50,7 +51,9 @@ class Handler extends ExceptionHandler
         $this->renderable(function (Throwable $e, $request) {
             if ($request->wantsJson()) {
                 $response = "";
-                if ($this->isAuthentication($e)) {
+                if ($this->isThrottle($e)) {
+                    $response = $this->ThrottleResponse($e);
+                } else if ($this->isAuthentication($e)) {
                     $response = $this->AuthResponse($e);
                 } else if ($this->isModel($e)) {
                     $response = $this->ModelResponse($e);
@@ -60,6 +63,11 @@ class Handler extends ExceptionHandler
                 return $response ? $response : parent::render($request, $e);
             }
         });
+    }
+
+    protected function isThrottle($e)
+    {
+        return $e instanceof ThrottleRequestsException;
     }
 
     protected function isAuthentication($e)
@@ -75,6 +83,20 @@ class Handler extends ExceptionHandler
     protected function isHttp($e)
     {
         return $e instanceof NotFoundHttpException;
+    }
+
+    protected function ThrottleResponse($e)
+    {
+        $response = ['message' => 'Too many attempts, please try after a minute.'];
+        if ($this->env != 'production') {
+            $response = array_merge($response, [
+                'exception' => $e->getMessage()
+            ]);
+        }
+        return new JsonResponse(
+            $response,
+            Response::HTTP_TOO_MANY_REQUESTS
+        );
     }
 
     protected function AuthResponse($e)

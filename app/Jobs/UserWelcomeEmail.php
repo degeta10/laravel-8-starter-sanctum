@@ -3,6 +3,8 @@
 namespace App\Jobs;
 
 use App\Mail\WelcomeUser;
+use App\Models\User;
+use App\Notifications\WelcomeUser as NotificationsWelcomeUser;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
@@ -10,17 +12,15 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 class UserWelcomeEmail implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-    private $email, $userName;
+    private $user;
 
     public function __construct($data)
     {
-        $this->email = $data->email;
-        $this->userName = $data->userName;
+        $this->user = $data->user;
     }
 
     /**
@@ -30,7 +30,8 @@ class UserWelcomeEmail implements ShouldQueue
      */
     public function handle()
     {
-        Mail::to($this->email)->send(new WelcomeUser($this->userName));
+        $notifiable = User::whereEmail($this->user->email)->first();
+        $notifiable->notify(new NotificationsWelcomeUser($notifiable));
     }
 
     public function failed(Exception $exception)

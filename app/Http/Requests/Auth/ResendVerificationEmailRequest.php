@@ -8,7 +8,7 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\JsonResponse;
 
-class RefreshTokenRequest extends FormRequest
+class ResendVerificationEmailRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -28,14 +28,16 @@ class RefreshTokenRequest extends FormRequest
     public function rules()
     {
         return [
-            'token'     => 'required|string',
+            'email'     => 'required|email|exists:users',
         ];
     }
 
     public function messages()
     {
         return [
-            'token.required'    => 'Token is required',
+            'email.required'        => 'Email is required',
+            'email.email'           => 'Enter a valid email',
+            'email.exists'          => 'This email is not yer registered',
         ];
     }
 

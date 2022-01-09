@@ -28,7 +28,7 @@ class LoginRequest extends FormRequest
     public function rules()
     {
         return [
-            'email'     => 'required|string|email|exists:users',
+            'email'     => 'required|email|exists:users',
             'password'  => 'required|string'
         ];
     }
@@ -37,8 +37,7 @@ class LoginRequest extends FormRequest
     {
         return [
             'email.required'        => 'Email is required',
-            'email.string'          => 'Email must be a string',
-            'email.email'           => 'Wrong email format',
+            'email.email'           => 'Enter a valid email',
             'email.exists'          => 'This email doesn\'t exists',
             'password.required'     => 'Password is required',
             'password.string'       => 'Password must be valid',

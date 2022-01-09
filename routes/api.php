@@ -19,15 +19,14 @@ Route::group([
 ], function () {
     Route::post('signup', [AuthController::class, 'signup']);
     Route::post('login', [AuthController::class, 'login']);
-    // Route::post('token/refresh', [AuthController::class, 'refreshToken'])->name('token.refresh');
+    Route::post('email-verification/resend', [AuthController::class, 'resendVerificationEmail'])->middleware(['throttle:6,1']);
 });
 
 Route::group([
     'prefix' => 'auth',
-    'middleware' => 'auth:sanctum'
+    'middleware' => ['auth:sanctum', 'verified']
 ], function () {
     Route::get('me', [AuthController::class, 'me']);
     Route::patch('profile', [AuthController::class, 'updateProfile']);
     Route::post('logout', [AuthController::class, 'logout']);
-    Route::post('token/refresh', [AuthController::class, 'refreshToken'])->name('token.refresh');
 });

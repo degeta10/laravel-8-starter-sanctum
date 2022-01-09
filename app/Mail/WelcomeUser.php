@@ -10,15 +10,16 @@ use Illuminate\Queue\SerializesModels;
 class WelcomeUser extends Mailable
 {
     use Queueable, SerializesModels;
+    public $userName;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct($userName)
     {
-        //
+        $this->userName = $userName;
     }
 
     /**
@@ -28,6 +29,10 @@ class WelcomeUser extends Mailable
      */
     public function build()
     {
-        return $this->view('view.name');
+        return $this->markdown('emails.welcome')
+            ->subject('Welcome to ' . config('app.name'))
+            ->with([
+                'userName' => $this->userName,
+            ]);
     }
 }

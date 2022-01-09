@@ -2,16 +2,11 @@
 
 namespace App\Providers;
 
-use App\Events\UserRegistered;
-use App\Listeners\PruneOldTokens;
-use App\Listeners\RevokeOldTokens;
 use App\Listeners\SendWelcomeUserEmail;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Event;
-use Laravel\Passport\Events\AccessTokenCreated;
-use Laravel\Passport\Events\RefreshTokenCreated;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -24,15 +19,9 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
-        UserRegistered::class => [
-            SendWelcomeUserEmail::class,
-        ],
-        // AccessTokenCreated::class => [
-        //     RevokeOldTokens::class
-        // ],
-        // RefreshTokenCreated::class => [
-        //     PruneOldTokens::class,
-        // ],
+        Verified::class => [
+            SendWelcomeUserEmail::class
+        ]
     ];
 
     /**
