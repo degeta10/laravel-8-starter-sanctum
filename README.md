@@ -35,7 +35,7 @@ Run `php artisan serve` to start the app.
 
 Access the app using the below credentials
    -   email: admin@admin.com
-   -   password: qwe@123
+   -   password: qwe123123
 
 ## API Documentation
 
