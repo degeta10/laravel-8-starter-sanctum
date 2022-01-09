@@ -19,14 +19,15 @@ Route::group([
 ], function () {
     Route::post('signup', [AuthController::class, 'signup']);
     Route::post('login', [AuthController::class, 'login']);
-    Route::post('token/refresh', [AuthController::class, 'refreshToken']);
+    // Route::post('token/refresh', [AuthController::class, 'refreshToken'])->name('token.refresh');
 });
 
 Route::group([
     'prefix' => 'auth',
-    'middleware' => 'auth:api'
+    'middleware' => 'auth:sanctum'
 ], function () {
     Route::get('me', [AuthController::class, 'me']);
     Route::patch('profile', [AuthController::class, 'updateProfile']);
     Route::post('logout', [AuthController::class, 'logout']);
+    Route::post('token/refresh', [AuthController::class, 'refreshToken'])->name('token.refresh');
 });

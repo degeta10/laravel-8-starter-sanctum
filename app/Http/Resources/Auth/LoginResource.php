@@ -17,10 +17,8 @@ class LoginResource extends JsonResource
     {
         return [
             'message'           => 'Success',
-            'token_type'        =>  $this['token_type'],
+            'token_type'        =>  'Bearer',
             'access_token'      =>  $this['access_token'],
-            'refresh_token'     =>  $this['refresh_token'],
-            'expires_at'        =>  Carbon::now()->addSeconds($this['expires_in'])->toDateTimeString(),
             'user'              =>  new UserDetailsResponse(auth()->user())
         ];
     }
