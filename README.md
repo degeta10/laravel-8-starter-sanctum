@@ -8,6 +8,7 @@ The API authentication is done using Laravel Sanctum. <br>
 -   PHP 7.3 or greater
 -   Composer
 -   MySQL
+-   Any email service credentials (use [Mailtrap](https://mailtrap.io/) for testing purposes)
 
 ## Installation
 
@@ -17,6 +18,7 @@ The API authentication is done using Laravel Sanctum. <br>
 -   Copy `.example.env` file and rename it to **.env**
 -   Make sure the database credentials are updated in **.env** file (Both databases must have same username & password)
 -   Update the testing database's name at `DB_TEST_DATABASE` in .env file
+-   Update email service credentials in .env file
 -   Run `php artisan key:generate` to generate app key
 -   Run `php artisan config:cache`
 -   Run `composer update` to update all dependencies to latest (OPTIONAL)
