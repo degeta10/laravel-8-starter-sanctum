@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources\Auth;
 
-use Carbon\Carbon;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class LoginResource extends JsonResource
@@ -16,10 +15,9 @@ class LoginResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'message'           => 'Success',
             'token_type'        =>  'Bearer',
             'access_token'      =>  $this['access_token'],
-            'user'              =>  new UserDetailsResponse(auth()->user())
+            'user'              =>  new UserResource(auth()->user())
         ];
     }
 }

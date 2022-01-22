@@ -7,13 +7,11 @@ use App\Http\Requests\Auth\ResendVerificationEmailRequest;
 use App\Http\Requests\Auth\SignupRequest;
 use App\Http\Requests\Auth\UpdateProfileRequest;
 use App\Http\Resources\Auth\LoginResource;
-use App\Http\Resources\Auth\UserDetailsResponse;
+use App\Http\Resources\Auth\UserResource;
 use App\Models\User;
-use App\Notifications\WelcomeUser;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Response;
@@ -24,41 +22,47 @@ class AuthController extends Controller
 {
     public function signup(SignupRequest $request)
     {
-        return DB::transaction(function () use ($request) {
-            $user = User::create($request->validated());
-            if ($user) {
+        try {
+            return DB::transaction(function () use ($request) {
+                $user = User::create($request->validated());
                 event(new Registered($user));
-                return new JsonResponse(
-                    ['message' => 'You have successfully registered!'],
-                    Response::HTTP_OK
-                );
-            }
-            return new JsonResponse(
-                ['message' => 'Registration failed! Please try again.'],
+                return response()->success([], 'You have successfully registered!', Response::HTTP_CREATED);
+            });
+        } catch (\Throwable $th) {
+            return response()->error(
+                'Registration failed! Please try again.',
+                $th->getMessage(),
+                $th->getLine(),
                 Response::HTTP_CONFLICT
             );
-        });
+        }
     }
 
     public function login(LoginRequest $request)
     {
-        if (Auth::attempt($request->validated())) {
-            if ($request->user()->hasVerifiedEmail()) {
-                $user = $request->user();
-                $authToken = $user->createToken("auth_token_{$user->id}");
-                $response = [
-                    'access_token'  => $authToken->plainTextToken,
-                ];
-                return new LoginResource($response);
-            } else {
-                return new JsonResponse(
-                    ['message' => 'Please verify email to proceed'],
-                    Response::HTTP_UNAUTHORIZED
-                );
+        try {
+            if (Auth::attempt($request->validated())) {
+                if ($request->user()->hasVerifiedEmail()) {
+                    $user = $request->user();
+                    $authToken = $user->createToken("auth_token_{$user->id}");
+                    $response = [
+                        'access_token'  => $authToken->plainTextToken,
+                    ];
+                    return response()->success(new LoginResource($response));
+                } else {
+                    return response()->error(
+                        'Please verify email to proceed',
+                        '',
+                        '',
+                        Response::HTTP_UNAUTHORIZED
+                    );
+                }
             }
-        } else {
-            return new JsonResponse(
-                ['message' => 'Invalid credentials'],
+        } catch (\Throwable $th) {
+            return response()->error(
+                'Invalid credentials',
+                $th->getMessage(),
+                $th->getLine(),
                 Response::HTTP_UNAUTHORIZED
             );
         }
@@ -66,54 +70,64 @@ class AuthController extends Controller
 
     public function me()
     {
-        return new UserDetailsResponse(auth()->user());
+        try {
+            return new UserResource(auth()->user());
+        } catch (\Throwable $th) {
+            return response()->error(
+                '',
+                $th->getMessage(),
+                $th->getLine(),
+                Response::HTTP_BAD_REQUEST
+            );
+        }
     }
 
     public function updateProfile(UpdateProfileRequest $request)
     {
-        if (auth()->user()->update($request->validated())) {
-            return new JsonResponse(
-                ['message' => 'Profile updated successfully'],
-                Response::HTTP_OK
-            );
-        } else {
-            return new JsonResponse(
-                ['message' => 'Profile updation failed'],
-                Response::HTTP_CONFLICT
+        try {
+            return DB::transaction(function () use ($request) {
+                auth()->user()->update($request->validated());
+                return response()->success([], 'Profile updated successfully');
+            });
+        } catch (\Throwable $th) {
+            return response()->error(
+                'Profile updation failed',
+                $th->getMessage(),
+                $th->getLine(),
+                Response::HTTP_BAD_REQUEST
             );
         }
     }
 
     public function logout()
     {
-        if (auth()->user()->currentAccessToken()->delete()) {
-            return new JsonResponse(
-                ['message' => 'Successfully logged out'],
-                Response::HTTP_OK
+        try {
+            auth()->user()->currentAccessToken()->delete();
+            return response()->success([], 'Successfully logged out');
+        } catch (\Throwable $th) {
+            return response()->error(
+                '',
+                $th->getMessage(),
+                $th->getLine(),
+                Response::HTTP_BAD_REQUEST
             );
         }
     }
 
     public function resendVerificationEmail(ResendVerificationEmailRequest $request)
     {
-        $user = User::whereEmail($request->email)->first();
-        
         try {
+            $user = User::whereEmail($request->email)->findOrFail();
             if ($user->hasVerifiedEmail()) {
-                return new JsonResponse(
-                    ['message' => 'Email already verified'],
-                    Response::HTTP_OK
-                );
-            } else {
-                $user->sendEmailVerificationNotification();
-                return new JsonResponse(
-                    ['message' => 'Verification link sent'],
-                    Response::HTTP_OK
-                );
+                return response()->success([], 'Email already verified');
             }
+            $user->sendEmailVerificationNotification();
+            return response()->success([], 'Verification link sent');
         } catch (\Throwable $th) {
-            return new JsonResponse(
-                ['message' => 'Failed to send verification email'],
+            return response()->error(
+                'Failed to send verification email',
+                $th->getMessage(),
+                $th->getLine(),
                 Response::HTTP_BAD_REQUEST
             );
         }

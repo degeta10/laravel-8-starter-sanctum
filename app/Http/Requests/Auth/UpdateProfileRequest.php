@@ -4,9 +4,7 @@ namespace App\Http\Requests\Auth;
 
 use Illuminate\Validation\ValidationException;
 use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\JsonResponse;
 
 class UpdateProfileRequest extends FormRequest
 {
@@ -50,6 +48,6 @@ class UpdateProfileRequest extends FormRequest
     protected function failedValidation(Validator $validator)
     {
         $errors = (new ValidationException($validator))->errors();
-        throw new HttpResponseException(response()->json($errors, JsonResponse::HTTP_UNPROCESSABLE_ENTITY));
+        return response()->validation($errors);
     }
 }

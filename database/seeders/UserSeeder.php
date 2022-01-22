@@ -16,9 +16,16 @@ class UserSeeder extends Seeder
     public function run()
     {
         \App\Models\User::create([
-            'name' => 'Admin',
-            'email' => 'admin@admin.com',
-            'password' => 'qwe123123',
+            'name' => 'John Doe',
+            'email' => 'johndoe@example.com',
+            'password' => 'password',
+            'email_verified_at' => Carbon::now(),
+            'remember_token' => Str::random(10),
+        ]);
+        \App\Models\User::create([
+            'name' => 'Jane Doe',
+            'email' => 'janedoe@example.com',
+            'password' => 'password',
             'email_verified_at' => Carbon::now(),
             'remember_token' => Str::random(10),
         ]);
