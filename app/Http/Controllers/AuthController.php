@@ -9,25 +9,28 @@ use App\Http\Requests\Auth\UpdateProfileRequest;
 use App\Http\Resources\Auth\LoginResource;
 use App\Http\Resources\Auth\UserResource;
 use App\Models\User;
+use App\Services\UserService;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
+    public $userService;
+
+    public function __construct()
+    {
+        $this->userService = new UserService();
+    }
+
     public function signup(SignupRequest $request)
     {
         try {
-            return DB::transaction(function () use ($request) {
-                $user = User::create($request->validated());
-                event(new Registered($user));
-                return response()->success([], 'You have successfully registered!', Response::HTTP_CREATED);
-            });
+            $this->userService->createUser($request->validated());
+            return response()->success([], 'You have successfully registered!', Response::HTTP_CREATED);
         } catch (\Throwable $th) {
             return response()->error(
                 'Registration failed! Please try again.',
@@ -42,28 +45,27 @@ class AuthController extends Controller
     {
         try {
             if (Auth::attempt($request->validated())) {
-                if ($request->user()->hasVerifiedEmail()) {
-                    $user = $request->user();
-                    $authToken = $user->createToken("auth_token_{$user->id}");
-                    $response = [
-                        'access_token'  => $authToken->plainTextToken,
-                    ];
-                    return response()->success(new LoginResource($response));
-                } else {
-                    return response()->error(
-                        'Please verify email to proceed',
-                        '',
-                        '',
-                        Response::HTTP_UNAUTHORIZED
-                    );
-                }
+                $response = $this->userService->generateAccessToken($request->user());
+                return $response ? response()->success(new LoginResource($response)) : response()->error(
+                    'Please verify email to proceed',
+                    '',
+                    '',
+                    Response::HTTP_UNAUTHORIZED
+                );
+            } else {
+                return response()->error(
+                    'Invalid credentials',
+                    '',
+                    '',
+                    Response::HTTP_UNAUTHORIZED
+                );
             }
         } catch (\Throwable $th) {
             return response()->error(
-                'Invalid credentials',
+                '',
                 $th->getMessage(),
                 $th->getLine(),
-                Response::HTTP_UNAUTHORIZED
+                Response::HTTP_BAD_REQUEST
             );
         }
     }
@@ -85,10 +87,8 @@ class AuthController extends Controller
     public function updateProfile(UpdateProfileRequest $request)
     {
         try {
-            return DB::transaction(function () use ($request) {
-                auth()->user()->update($request->validated());
-                return response()->success([], 'Profile updated successfully');
-            });
+            $this->userService->updateUser(auth()->user(), $request->validated());
+            return response()->success([], 'Profile updated successfully');
         } catch (\Throwable $th) {
             return response()->error(
                 'Profile updation failed',
@@ -102,7 +102,7 @@ class AuthController extends Controller
     public function logout()
     {
         try {
-            auth()->user()->currentAccessToken()->delete();
+            $this->userService->destroyAccessToken(auth()->user());
             return response()->success([], 'Successfully logged out');
         } catch (\Throwable $th) {
             return response()->error(
