@@ -2,7 +2,6 @@
 
 namespace App\Listeners;
 
-use App\Events\UserRegistered;
 use App\Jobs\UserWelcomeEmail;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -23,7 +22,7 @@ class SendWelcomeUserEmail
     /**
      * Handle the event.
      *
-     * @param  \App\Events\UserRegistered  $event
+     * @param \Illuminate\Auth\Events\Verified  $event
      * @return void
      */
     public function handle(Verified $event)

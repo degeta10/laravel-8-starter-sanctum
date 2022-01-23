@@ -35,30 +35,32 @@ class ResponseMacroServiceProvider extends ServiceProvider
                 'success' => true,
                 'message' => $message ? $message : 'Success'
             ];
-            $response = array_merge($response, [
-                'data' => $data
-            ]);
-            if ($data->resource instanceof AbstractPaginator) {
+            if ($data) {
                 $response = array_merge($response, [
-                    'meta' => [
-                        'current_page'  => $data->currentPage(),
-                        'last_page'     => $data->lastPage(),
-                        'per_page'      => $data->perPage(),
-                        'total'         => $data->total(),
-                    ],
-                    'links' => [
-                        'first_page'    => (string) $data->getOptions()['path']
-                            . '?'
-                            . $data->getOptions()['pageName']
-                            . "=1",
-                        'prev_page'     => (string) $data->previousPageUrl(),
-                        'next_page'     => (string) $data->nextPageUrl(),
-                        'last_page'     => (string) $data->getOptions()['path']
-                            . '?'
-                            . $data->getOptions()['pageName']
-                            . "={$data->lastPage()}",
-                    ]
+                    'data' => $data
                 ]);
+                if ($data->resource instanceof AbstractPaginator) {
+                    $response = array_merge($response, [
+                        'meta' => [
+                            'current_page'  => $data->currentPage(),
+                            'last_page'     => $data->lastPage(),
+                            'per_page'      => $data->perPage(),
+                            'total'         => $data->total(),
+                        ],
+                        'links' => [
+                            'first_page'    => (string) $data->getOptions()['path']
+                                . '?'
+                                . $data->getOptions()['pageName']
+                                . "=1",
+                            'prev_page'     => (string) $data->previousPageUrl(),
+                            'next_page'     => (string) $data->nextPageUrl(),
+                            'last_page'     => (string) $data->getOptions()['path']
+                                . '?'
+                                . $data->getOptions()['pageName']
+                                . "={$data->lastPage()}",
+                        ]
+                    ]);
+                }
             }
             return Response::json($response, $status);
         });
@@ -73,18 +75,16 @@ class ResponseMacroServiceProvider extends ServiceProvider
                 'message' => $message ? $message : 'Failed'
             ];
             if (config('app.env') != 'production') {
-                if ($exception) {
-                    $response = array_merge($response, [
-                        'exception' => $exception
-                    ]);
-                }
-                if ($line) {
-                    $response = array_merge($response, [
-                        'line' => $line
-                    ]);
-                }
+                $response = array_merge($response, [
+                    'exception' => $exception
+                ]);
+                $response = array_merge($response, [
+                    'line' => $line
+                ]);
             }
-            return Response::json($response, $status);
+            return Response::json(array_filter($response, function ($item) {
+                return $item !== "";
+            }), $status);
         });
 
         /**
