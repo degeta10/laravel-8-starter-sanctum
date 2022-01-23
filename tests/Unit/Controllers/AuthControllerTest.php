@@ -7,14 +7,15 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
-class AuthenticationTest extends TestCase
+class AuthControllerTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, WithFaker;
 
     public function test_user_can_login_using_api()
     {
@@ -25,17 +26,19 @@ class AuthenticationTest extends TestCase
                 'email'     => $user->email,
                 'password'  => 'password'
             ]
-        )->assertStatus(200)->assertJsonStructure([
-            "data" => [
+        )->assertOk()
+            ->assertJsonStructure([
+                "success",
                 "message",
-                "user" => [
-                    'name',
-                    'email',
-                ],
-                "token_type",
-                "access_token",
-            ]
-        ]);
+                "data" => [
+                    "user" => [
+                        'name',
+                        'email',
+                    ],
+                    "token_type",
+                    "access_token",
+                ]
+            ]);
     }
 
     public function test_only_verified_user_can_login_using_api()
@@ -55,12 +58,12 @@ class AuthenticationTest extends TestCase
         $this->postJson(
             '/api/auth/signup',
             [
-                'name'                  => 'Test customer',
-                'email'                 => 'test@test.com',
+                'name'                  => $this->faker->name(),
+                'email'                 => $this->faker->safeEmail(),
                 'password'              => 'password',
                 'password_confirmation' => 'password',
             ]
-        )->assertStatus(200);
+        )->assertCreated();
     }
 
     public function test_registered_event_is_dispatched_when_signup_using_api()
@@ -71,8 +74,8 @@ class AuthenticationTest extends TestCase
         $this->postJson(
             '/api/auth/signup',
             [
-                'name'                  => 'Test customer',
-                'email'                 => 'test@test.com',
+                'name'                  => $this->faker->name(),
+                'email'                 => $this->faker->safeEmail(),
                 'password'              => 'password',
                 'password_confirmation' => 'password',
             ]
@@ -83,16 +86,17 @@ class AuthenticationTest extends TestCase
     public function test_user_will_receive_verification_email_after_signup_using_api()
     {
         Notification::fake();
+        $mail = $this->faker->safeEmail();
         $this->postJson(
             '/api/auth/signup',
             [
-                'name'                  => 'Test customer',
-                'email'                 => 'test@test.com',
+                'name'                  => $this->faker->name(),
+                'email'                 => $mail,
                 'password'              => 'password',
                 'password_confirmation' => 'password',
             ]
         );
-        $user = \App\Models\User::whereEmail('test@test.com')->first();
+        $user = \App\Models\User::whereEmail($mail)->first();
         Notification::assertSentTo($user, VerifyEmail::class);
     }
 
@@ -104,7 +108,7 @@ class AuthenticationTest extends TestCase
             [
                 'email' => $user->email,
             ]
-        )->assertStatus(200);
+        )->assertOk();
     }
 
     public function test_unverified_user_will_receive_verification_email_when_resent_using_api()
@@ -181,11 +185,10 @@ class AuthenticationTest extends TestCase
 
     public function test_user_cannot_login_with_wrong_email_using_api()
     {
-        $user = \App\Models\User::factory()->create();
         $this->postJson(
             '/api/auth/login',
             [
-                'email'     => $user->email . "test",
+                'email'     =>  $this->faker->safeEmail(),
                 'password'  => 'password1'
             ],
         )->assertUnprocessable();
@@ -197,11 +200,12 @@ class AuthenticationTest extends TestCase
             \App\Models\User::factory()->create(),
             ['*']
         );
-        $this->postJson('/api/auth/logout')->assertStatus(200);
+        $this->postJson('/api/auth/logout')->assertOk();
     }
 
     public function test_guest_user_cannot_logout_using_api()
     {
+        $this->withoutExceptionHandling();
         $this->expectException('Illuminate\Auth\AuthenticationException');
         $this->postJson('/api/auth/logout');
     }

@@ -35,7 +35,7 @@ class ResendVerificationEmailRequest extends FormRequest
         return [
             'email.required'        => 'Email is required',
             'email.email'           => 'Enter a valid email',
-            'email.exists'          => 'This email is not yer registered',
+            'email.exists'          => 'This email is not yet registered',
         ];
     }
 
